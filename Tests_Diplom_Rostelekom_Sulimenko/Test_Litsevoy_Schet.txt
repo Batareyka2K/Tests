@@ -1,0 +1,158 @@
+"Кнопка: «Привязать лицевой счёт»
+
+Сайт: https://lk.rt.ru/#
+
+Клиент вводит:
+
+
+Лицевой счёт
+
+
+Пароль
+
+
+Система: 
+
+проверяет формат лицевого счёта
+
+
+ищет логин, связанный с лицевым счётом, номер телефона и логин услуги
+
+
+Далее система проверяет:
+
+
+связку Найденный логин, Номер телефона, Логин услуги
+При успехе:
+
+
+аутентифицирует клиента
+
+
+редиректит на redirect_uri
+
+
+При ошибке:
+
+
+
+«Пожалуйста, напишите нам в чат. Мы с удовольствием поможем вам» высветилось сообщение справа сверху
+
+Позитивные кейсы 
+
+TC ID: AUTH_LS_LK_POS_01
+
+Название: 
+Успешная авторизация по корректному ЛС и паролю
+
+
+Шаги:
+
+
+Открыть сайт
+
+
+Выбрать кнопку «Лицевой счёт»
+
+
+Ввести корректный ЛС
+
+
+Ввести корректный номер телефона
+Нажать «Войти»
+
+
+Ожидаемый результат:
+
+
+Система проверяет формат ЛС
+
+
+Находит логин, связанный с ЛС
+
+
+Проверяет связку Логин + Пароль
+
+
+Клиент успешно аутентифицирован
+
+
+Происходит редирект на redirect_uri"
+
+#Проверка на статус-код:
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+
+#Успешная авторизация
+ 1
+pm.test("Status code is 200", function () {
+
+    pm.response.to.have.status(200);
+
+});
+
+
+pm.test("Redirect uri exists", function () {
+
+    var jsonData = pm.response.json();
+    
+pm.expect(jsonData.redirect_uri).to.not.be.undefined;
+
+});
+
+#Успешная авторизация 2
+import requests
+
+BASE_URL = "https://lk.rt.ru/api/auth/by-account"
+
+
+def test_auth_by_account_success():
+    payload = {
+        "account": "1234567890",
+        "password": "correct_password"
+    }
+
+    response = requests.post(BASE_URL, json=payload)
+
+    assert response.status_code == 200, "AUTH_200_EXPECTED"
+
+    response_json = response.json()
+    assert "redirect_uri" in response_json, "REDIRECT_URI_NOT_FOUND"
+
+#Неверный пароль
+pm.test("Status code is 401", function () {
+    pm.response.to.have.status(401);
+});
+
+pm.test("Error message is correct", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.message).to.eql("Неверный логин или пароль");
+});
+
+#Неверный пароль
+def test_auth_by_account_wrong_password():
+    payload = {
+        "account": "1234567890",
+        "password": "wrong_password"
+    }
+
+    response = requests.post(BASE_URL, json=payload)
+
+    assert response.status_code == 401, "AUTH_401_WRONG_PASSWORD"
+
+    response_json = response.json()
+    assert response_json.get("message") == "Неверный логин или пароль", \
+        "ERROR_MESSAGE_INCORRECT"
+
+#Некорректный формат лицевого счета
+def test_auth_by_account_invalid_format():
+    payload = {
+        "account": "abc123",
+        "password": "any_password"
+    }
+
+    response = requests.post(BASE_URL, json=payload)
+
+    assert response.status_code == 400, "AUTH_400_INVALID_ACCOUNT_FORMAT"
+
+

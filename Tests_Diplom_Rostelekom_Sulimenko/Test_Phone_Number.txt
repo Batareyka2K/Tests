@@ -1,0 +1,177 @@
+"Тип авторизации: по номеру телефона
+
+Кнопка: «Получить код»
+
+ (Далее - код (Страница - "Подтверждение телефона")
+Сайты: lk.rt.ru, my.rt.ru, start.rt.ru, lk.smarthome.rt.ru, key.rt.ru
+
+Описание сценария
+
+Актор:
+
+
+Клиент (пользователь сайта)
+
+
+Предусловие
+
+:
+Клиент находится на странице авторизации и выбирает вкладку «Номер».
+
+Основной сценарий (успешный)
+
+
+Клиент вводит номер телефона (и код)
+
+Нажимает кнопку «Получить код»
+
+
+Система:
+
+
+проверяет корректность формата номера телефона
+
+
+проверяет связку Номер телефона и Код
+
+При успешной проверке:
+
+
+выполняет поиск учетной записи (УЗ) по номеру телефона
+
+
+аутентифицирует клиента
+
+
+выполняет перенаправление клиента на страницу redirect_uri
+
+Негативный сценарий
+
+
+Если связка "Номер телефона" и последующий "Код" (двухстраничный flow) введена некорректно:
+
+
+отображается сообщение «Введите телефон в формате +7ХХХХХХХХХХ или +375XXXXXXXXX, или email в формате example@email.ru»
+
+
+элемент на следующей странице "Подтверждение телефона":
+при долгом ожидании: «Срок действия кода истёк. Пожалуйста, запросите код снова» подсвечивается красным цветом
+
+при неправильном вводе кода: "Неверный код. Повторите попытку"
+сценарий начинается заново с шага 1
+
+#HTML
+<form id="phoneLoginForm">
+  <label>Номер телефона</label>
+  <input
+    type="text"
+    id="phone"
+    maxlength="11"
+    placeholder="79991234567"
+    required
+  />
+
+  <label>Пароль</label>
+  <input
+    type="password"
+    id="password"
+    required
+  />
+
+  <button type="submit">Номер</button>
+
+  <div id="error" class="error hidden">
+    Неверный логин или пароль
+  </div>
+
+  <a id="forgotPassword" href="#">
+    Забыл пароль
+  </a>
+</form>
+
+#CSS
+.hidden {
+  display: none;
+}
+
+.error {
+  color: red;
+  margin-top: 6px;
+}
+
+.forgot-orange {
+  color: orange;
+}
+
+#JavaScript
+document.getElementById("phoneLoginForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const phone = document.getElementById("phone").value.trim();
+  const password = document.getElementById("password").value;
+  const error = document.getElementById("error");
+  const forgot = document.getElementById("forgotPassword");
+
+  error.classList.add("hidden");
+  forgot.classList.remove("forgot-orange");
+
+  // Учебная проверка номера телефона
+  const phonePattern = /^7\d{10}$/;
+
+  if (!phonePattern.test(phone)) {
+    showError();
+    return;
+  }
+
+  // Учебная проверка связки
+  if (phone !== "79991234567" || password !== "123456") {
+    showError();
+    return;
+  }
+
+  // Учебный редирект
+  window.location.href = "/redirect_uri";
+
+  function showError() {
+    error.classList.remove("hidden");
+    forgot.classList.add("forgot-orange");
+  }
+});
+
+#Backend
+function loginByPhone(request):
+    phone = request.phone
+    password = request.password
+
+    if not validPhoneFormat(phone):
+        return AUTH_ERROR
+
+    user = findUserByPhone(phone)
+
+    if user is null:
+        return AUTH_ERROR
+
+    if password != user.password:
+        return AUTH_ERROR
+
+    authenticate(user)
+
+    redirect(request.redirect_uri)
+
+"Инструменты тестирования: Pycharm, Postman
+Ручное тестирование
+Что проверяли:
+
+
+пустые поля
+
+
+ввод букв 
+
+меньше или больше 11 цифр
+
+
+повторные попытки входа"
+
+
+

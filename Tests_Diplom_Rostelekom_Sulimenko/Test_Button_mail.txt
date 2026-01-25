@@ -1,0 +1,204 @@
+"Тип авторизации: по почте
+
+Актор
+
+
+Клиент (пользователь сайта)
+
+
+Предусловие
+
+
+Клиент находится на странице авторизации.
+Основной сценарий (успешный)
+
+
+Клиент вводит почту и пароль
+
+
+Нажимает кнопку «Получить код»
+
+
+Система:
+
+
+проверяет корректность формата почты
+
+
+проверяет связку Почта + Пароль
+
+
+При успешной проверке:
+
+
+выполняет поиск учетной записи (УЗ) по почте
+
+
+аутентифицирует клиента
+
+
+перенаправляет клиента на страницу redirect_uri
+Негативный сценарий
+
+
+Если связка Почта + Пароль введена некорректно:
+
+
+отображается сообщение «Введите телефон в формате +7ХХХХХХХХХХ или +375XXXXXXXXX, или email в формате example@email.ru»
+
+
+элемент «Забыл пароль» подсвечивается другим (оранжевым) цветом
+
+
+сценарий начинается заново с шага 1"
+#Frontend
+<form id="emailLoginForm">
+  <label>Email</label>
+  <input
+    type="text"
+    id="email"
+    maxlength="12"
+    placeholder="___________"
+    required
+  />
+
+  <label>Пароль</label>
+  <input
+    type="password"
+    id="password"
+    required
+  />
+
+  <button type="submit">Почта</button>
+
+  <div id="error" class="error hidden">
+    Неверный логин или пароль
+  </div>
+
+  <a id="forgotPassword" href="#">
+    Забыл пароль
+  </a>
+</form>
+
+#CSS
+.hidden {
+  display: none;
+}
+
+.error {
+  color: red;
+  margin-top: 6px;
+}
+
+.forgot-orange {
+  color: orange;
+}
+
+#JavaScript
+document.getElementById("emailLoginForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const error = document.getElementById("error");
+  const forgot = document.getElementById("forgotPassword");
+
+  error.classList.add("hidden");
+  forgot.classList.remove("forgot-orange");
+
+  // Проверка формата почты
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(email)) {
+    showError();
+    return;
+  }
+
+  // Проверка связки
+  if (email !== "test@mail.ru" || password !== "123456") {
+    showError();
+    return;
+  }
+
+  // Редирект
+  window.location.href = "/redirect_uri";
+
+  function showError() {
+    error.classList.remove("hidden");
+    forgot.classList.add("forgot-orange");
+  }
+});
+
+#Backend
+function loginByEmail(request):
+    email = request.email
+    password = request.password
+
+    if not validEmailFormat(email):
+        return AUTH_ERROR
+
+    user = findUserByEmail(email)
+
+    if user is null:
+        return AUTH_ERROR
+
+    if password != user.password:
+        return AUTH_ERROR
+
+    authenticate(user)
+
+    redirect(request.redirect_uri)
+
+"Проверки, выполняемые системой
+
+Шаг/Что проверяется
+
+Ввод/не более 12 символов
+
+Формат/email соответствует шаблону
+
+УЗ/существует ли пользователь
+
+Пароль/совпадение пароля
+
+UI/отображение ошибок
+
+Redirect/переход на redirect_uri
+Инструменты тестирования: Postman
+Зачем: показать, как тестируется API
+
+Что проверяли:
+
+
+корректная почта + пароль > 200
+
+
+неверные данные > 401"
+#Cypress (E2E)(Зачем: показать полный пользовательский путь - 
+Что проверяли:
+
+ввод данных
+
+, появление ошибки и 
+
+подсветку «Забыл пароль» 
+
+редирект при успехе)
+cy.get('#email').type('wrong@mail')
+cy.get('#password').type('111')
+cy.contains('Почта').click()
+cy.contains('Неверный логин или пароль')
+
+"p.s. Ручное тестирование (manual)
+
+ Зачем: обучение тест-дизайну - 
+Что делали:
+
+ граничные значения (12 символов)
+
+ пустые поля
+
+, неверный формат почты"
+
+
+

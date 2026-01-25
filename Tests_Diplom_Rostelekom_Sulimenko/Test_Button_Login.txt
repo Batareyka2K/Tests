@@ -1,0 +1,311 @@
+#Сценарий авторизации клиента по номеру телефона, кнопка "Логин"
+"Сценарий авторизации (логика) 
+
+Актор: Клиент
+
+Точка входа: кнопка «Логин»
+
+Тип логина: номер телефона / email / логин (обобщённо)
+
+
+Основной сценарий (Happy Path) 
+
+Клиент вводит логин + пароль
+
+
+Нажимает кнопку «Логин»
+
+
+Система:
+
+
+валидирует формат логина
+проверяет связку Логин + Пароль
+
+
+При успехе:
+
+
+находит УЗ (учётную запись)
+
+
+аутентифицирует клиента
+
+
+создаёт сессию / JWT
+
+ 
+редиректит на redirect_uri
+
+
+Негативный сценарий
+
+
+При некорректной связке:
+
+сообщение: «Неверный логин или пароль»
+
+
+элемент «Забыл пароль» подсвечивается оранжевым"
+#Fronted
+<form id="loginForm">
+  <input
+    type="text"
+    id="login"
+    placeholder="Телефон / Email"
+    required
+  />
+
+  <input
+    type="password"
+    id="password"
+    placeholder="Пароль"
+    required
+  />
+
+  <button type="submit">Логин</button>
+
+  <div id="error" class="error hidden">
+    Неверный логин или пароль
+  </div>
+
+  <a id="forgotPassword" href="/forgot-password">
+    Забыл пароль
+  </a>
+</form>
+#CSS
+.hidden {
+  display: none;
+}
+
+.error {
+  color: red;
+  margin-top: 8px;
+}
+
+.forgot-orange {
+  color: orange;
+}
+#JavaScript
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const login = document.getElementById("login").value.trim();
+  const password = document.getElementById("password").value;
+  const errorBlock = document.getElementById("error");
+  const forgotLink = document.getElementById("forgotPassword");
+
+  errorBlock.classList.add("hidden");
+  forgotLink.classList.remove("forgot-orange");
+
+  // Клиентская валидация
+  if (!login || !password) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        login,
+        password,
+        redirect_uri: window.location.search
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error("AUTH_FAILED");
+    }
+
+    const data = await response.json();
+    window.location.href = data.redirect_uri;
+
+  } catch (err) {
+    errorBlock.classList.remove("hidden");
+    forgotLink.classList.add("forgot-orange");
+  }
+});
+#Backend (псевдокод / REST)
+POST /api/auth/login
+#{
+  "login": "+79991234567",
+  "password": "******",
+  "redirect_uri": "https://lk.rt.ru/profile"
+}
+#Backend-логика (псевдокод)
+function login(request):
+    login = request.login
+    password = request.password
+
+    if not isValidLoginFormat(login):
+        return 401
+
+    user = findUserByLogin(login)
+
+    if user == null:
+        return 401
+
+    if not verifyPassword(password, user.password_hash):
+        return 401
+
+    session = createSession(user.id)
+
+    return 200 {
+        redirect_uri: request.redirect_uri
+    }
+"Что именно проверяется системой
+//Шаг//Проверка
+
+Формат логина//телефон / email / строка
+
+Наличие УЗ//поиск по login
+Пароль//hash + salt
+
+Статус УЗ//активна / заблокирована
+
+Redirect//whitelist redirect_uri
+Инструменты и техники тестирования
+
+
+1. Postman / Insomnia
+
+
+Зачем: тестирование API авторизации
+
+Почему: быстрые ручные проверки backend без UI
+
+
+Что проверялось:
+
+корректные / некорректные логины
+
+
+неверный пароль
+
+
+пустые поля
+
+
+коды ответов (200 / 401)
+
+
+тело ответа (redirect_uri)
+
+
+Что именно делали:
+
+
+коллекция запросов Auth
+
+
+environment с разными логинами
+
+
+негативные кейсы
+
+
+2. Swagger / OpenAPI
+
+
+Зачем: контрактное тестирование API
+
+Почему: единый источник правды между frontend и backend
+
+
+Проверялось:
+
+структура запроса/ответа
+
+
+обязательные поля
+
+типы данных
+
+
+3. Cypress / Playwright
+
+
+Зачем: E2E-тестирование сценария
+
+Почему: проверяет реальное поведение пользователя
+
+
+Проверялось:
+
+
+ввод логина/пароля
+
+
+появление ошибки
+
+
+перекраска «Забыл пароль»
+
+
+редирект при успехе
+"
+#Cypress
+cy.get('#login').type('79991234567')
+cy.get('#password').type('wrongpass')
+cy.contains('Логин').click()
+
+cy.contains('Неверный логин или пароль')
+cy.get('#forgotPassword').should('have.class', 'forgot-orange')
+"JUnit / Jest
+Зачем: тестирование бизнес-логики
+
+Почему: быстро, дёшево, изолированно
+
+
+Проверялось:
+
+
+verifyPassword
+
+
+поиск УЗ
+
+
+формат логина
+Security-тестирование
+Инструменты:
+
+OWASP ZAP
+
+Burp Suite
+
+
+Что проверяли:
+
+brute-force
+
+
+SQL-injection
+
+
+CSRF
+
+
+redirect_uri spoofing
+Нагрузочное тестирование
+
+Инструменты:
+
+
+JMeter / k6
+
+
+Зачем: проверить авторизацию при пике нагрузки
+
+Проверялось:
+
+
+время ответа
+
+
+ошибки 5xx
+
+
+стабильность сессий
+"
